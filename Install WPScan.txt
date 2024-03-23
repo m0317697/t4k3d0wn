@@ -1,0 +1,34 @@
+## Install WPScan on Kali Linux ##
+
+# Open console
+
+# Install WPScan
+
+sudo apt update -y
+sudo apt upgrade -y
+
+sudo apt install wpscan -y	
+
+# Start scanning
+
+wpscan --url http://example.com
+
+# If a website has done a good enough job of obfuscating their WordPress information,
+# WPScan may return saying that the site isn’t running WordPress at all.
+# If you know this to be untrue, you can use the --force option to force WPScan to scan the site anyway.
+
+wpscan --url http://example.com --force
+
+
+# API token (stefan)
+
+# iLcN2l65ufUeCkMswRxqTRxsrVYcf0s2ZDGaJE92d54
+
+# Scanning with API for more options
+
+wpscan --url http://example.com --api-token TOKEN
+
+# To perform a more invasive scan, which will potentially reveal more vulnerabilities or information,
+# you can specify a different detection type with the --detection-mode option
+
+wpscan --url http://example.com --api-token TOKEN --detection-mode aggressive

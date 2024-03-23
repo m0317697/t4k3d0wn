@@ -1,0 +1,47 @@
+## Building Kali Linux machine for DigitalOcean ##
+
+#1) Download ISO file
+
+#Go to: https://http.kali.org/kali/dists/kali-rolling/main/installer-amd64/current/images/netboot/
+#Download the "mini.iso" file
+
+#2) Install a new VM
+
+#Create a new virtual machine setting the OS to the latest Debian 64-bit and allocating a 20 GB hard disk
+#It is important to store the virtual disk as a single file that is dynamically allocated
+
+#3) Once installed, update the system
+
+kali@kali:~$ sudo apt update
+kali@kali:~$ sudo apt full-upgrade -y
+
+#4) Install required packages
+
+kali@kali:~$ sudo apt install -y cloud-init
+kali@kali:~$ sudo sh -c "echo 'datasource_list: [ ConfigDrive, DigitalOcean, NoCloud, None ]' > /etc/cloud/cloud.cfg.d/99_digitalocean.cfg"
+kali@kali:~$ sudo systemctl enable cloud-init --now
+
+#5) Prepare for SSH
+
+kali@kali:~$ sudo apt install -y openssh-server
+kali@kali:~$ sudo systemctl enable ssh.service --now
+
+kali@kali:~$ passwd -d root
+
+kali@kali:~$ mkdir -p /root/.ssh/
+
+#6) Cleanup
+
+kali@kali:~$ apt autoremove
+kali@kali:~$ apt autoclean
+kali@kali:~$ rm -rf /var/log/*
+kali@kali:~$ history -c
+
+#7) Poweroff the machine
+
+kali@kali:~$ poweroff
+
+
+
+
+

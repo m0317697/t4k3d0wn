@@ -1,0 +1,42 @@
+## Install Spinderfoot (OSINT tool) on Kali Linux ##
+
+# Open console
+
+cd Desktop
+
+mkdir spiderfoot
+
+cd spiderfoot
+
+# Download spiderfoot from Github
+
+git clone https://github.com/smicallef/spiderfoot
+
+cd spiderfoot
+
+pip install -r requirements.txt
+
+# Run the tool
+
+python3 sf.py
+
+python3 ./sf.py -l  127.0.0.1:5001
+
+## OUTPUT
+└─# python3 ./sf.py -l  127.0.0.1:5001                                                                                                                                                                         
+2024-03-03 14:35:18,954 [INFO] sf : Starting web server at 127.0.0.1:5001 ...
+
+*************************************************************
+ Use SpiderFoot by starting your web browser of choice and 
+ browse to http://127.0.0.1:5001/
+*************************************************************
+
+2024-03-03 14:35:18,954 [WARNING] sf : 
+********************************************************************
+Warning: passwd file contains no passwords. Authentication disabled.
+Please consider adding authentication to protect this instance!
+Refer to https://www.spiderfoot.net/documentation/#security.
+********************************************************************
+
+# The tool has started. Now use any browser and go to: 127.0.0.1:5001
+# You can start scanning!

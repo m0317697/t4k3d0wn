@@ -1,0 +1,35 @@
+## Install WPForce on Kali Linux ##
+
+# Open console
+
+# Install WPForce
+
+sudo apt update -y
+sudo apt upgrade -y
+
+git clone https://github.com/n00py/WPForce.git	
+
+# Navigate to the WPForce directory and run the setup script:
+
+cd WPForce
+./setup.sh
+
+# Configure the WPForce tool
+
+sudo wpforce --configure
+#enter necessary variables as requested
+
+# Run the WPForce tool
+
+sudo wpforce --run
+
+# Once the scan is complete, the tool will generate a report
+# which you can analyze to determine the security of the WordPress site.
+
+# Run it to perform an automated WordPress attack
+
+wpforce -u [username] -p [password] -t [target]
+
+# Once you have run the WPForce tool, you can analyze the results
+
+cat output.txt

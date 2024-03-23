@@ -1,0 +1,52 @@
+## Install Recon-ng (OSINT tool) on Kali Linux ##
+
+# Open console
+
+# Download Recon-ng from Github
+
+git clone https://github.com/lanmaster53/recon-ng.git
+
+# Start Recon-ng
+
+recon-ng
+
+# To do Reconnaissance first you have to create a workspace for that
+
+workspaces
+
+workspaces create "t4k3d0wn"
+
+# Now you have to go to marketplace to install modules to initiate your Reconnaissance
+
+marketplace search 
+
+marketplace install (module name) (e.g.: recon/companies-domains/viewdns_reverse_whois)
+
+# Load the installed modules in our workspace
+
+modules load (module name) (e.g.: modules load recon/companies-domains/viewdns_reverse_whois)
+
+# Search on a domain
+
+options set SOURCE (domain name) (e.g.: options set SOURCE google.com)
+
+run
+
+
+
+
+## other tools
+## nmap - scanning IP address / DN for open ports
+
+apt install nmap
+
+nmap (IP address / url)
+
+## other tools
+## Netcat - trying to connect to an open port
+
+apt install netcat-traditional
+
+nc (ip / url) (port)
+
+

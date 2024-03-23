@@ -1,0 +1,18 @@
+sudo apt update
+sudo apt install wireguard
+
+wg genkey | sudo tee /etc/wireguard/private.key
+sudo chmod go= /etc/wireguard/private.key
+
+Private Key: IM98KR+1eldnwtWnrkx+eVTyKYLIhu7pJahqdufJeHQ=
+
+
+sudo cat /etc/wireguard/private.key | wg pubkey | sudo tee /etc/wireguard/public.key
+
+Public Key: dCMnop6cBjNofVO8PWHBd7OdetxXJdMA2cYiNKYpqmU=
+
+
+cat /var/lib/dbus/machine-id
+
+144474a12fe7cce510c276cc65d10140
+

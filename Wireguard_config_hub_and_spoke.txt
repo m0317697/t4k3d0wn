@@ -1,0 +1,474 @@
+#Using WireGuard for Hub and Spoke Site-to-Site VPN
+
+#For all nodes 
+
+#Step 1: update and upgrade system
+apt update ; apt upgrade -y
+
+#Step 2: Install Wireguard
+apt install wireguard -y (op Kali: git://git.zx2c4.com/wireguard-linux)cd
+
+#Step 3
+cd /etc/wireguard
+umask 077
+wg genkey | tee privatekey | wg pubkey > publickey
+
+grep '' *
+
+// Info Hub //
+--------------------
+privatekey = uH/iK8w2xuWEs5c/SFUAy6EVMwMgtJ7ck4gLQDOaxm8=
+publickey = xDXIsemhye9BDJ4IEy/8cF4o0bp+rMVF2bJNNxItYX4=
+
+eth0 (publicIP): 167.99.211.205/20
+eth1 (privateIP): 10.110.16.2/20
+
+// Info Spoke //
+--------------------
+privatekey = CL5JTduMgGnlRfEvNteBMuiv7SZ4EiE64pVVnX7OLX4=
+publickey = MZOzW3PybO2vpIcDJysev4ujse0OCaZ6+YNf+Nc3lXc=
+
+eth0 (publicIP): 178.128.253.15/20
+eth1 (privateIP): 10.110.32.2/20
+
+// Info KALI //su
+--------------------
+privatekey = uMCCzzARDkTJ2WqdhXWUYijVsYoNNF50Bt4qafGwqUU=
+publickey = O8vrRDuB5iZV5Xhq2WkfuqZiA/rnRvrMZz+qRsZN7Cs=
+
+eth0 (publicIP): 178.62.213.34/18
+eth1 (privateIP): 10.110.32.3/20
+
+// Info Mail //
+--------------------
+privatekey = oPzi0+RbwB3P/c0zPjyqZCEZjMSfDgT2XLjyEGIwy24=
+publickey = HBkzn/b71BoFP3hZCv1N+p7cNiLrlf7CR/OP18qiP1A=
+
+eth0 (publicIP): 134.209.81.14/20
+eth1 (privateIP): 10.110.0.3/20
+
+
+#Step 4: Set up point-to-point link between Hub and Spoke
+
+#For Hub
+cd /et/wireguard
+nano wg0.conf
+
+#Hub
+[Interface]
+PrivateKey = uH/iK8w2xuWEs5c/SFUAy6EVMwMgtJ7ck4gLQDOaxm8=
+ListenPort = 60031
+
+#Spoke
+[Peer]
+PublicKey = MZOzW3PybO2vpIcDJysev4ujse0OCaZ6+YNf+Nc3lXc=
+EndPoint = 178.128.253.15:60031
+AllowedIPs = 0.0.0.0/0
+
+#For Spoke
+cd /et/wireguard
+nano wg0.conf
+
+#Spoke
+[Interface]
+PrivateKey = CL5JTduMgGnlRfEvNteBMuiv7SZ4EiE64pVVnX7OLX4=
+ListenPort = 60031
+
+#Hub
+[Peer]
+PublicKey = xDXIsemhye9BDJ4IEy/8cF4o0bp+rMVF2bJNNxItYX4=
+Endpoint = 167.99.211.205:60031
+AllowedIPs = 0.0.0.0/0
+
+
+#Step 5: Add wg interface on both Hub annd Spoke
+ip link add dev wg0 type wireguard
+ip a s dev wg0
+
+#For Hub
+ip a add 169.254.0.1 peer 169.254.0.2 dev wg0
+ip -br a s dev wg0
+wg setconf wg0 wg0.conf
+ip link set wg0 up
+systemctl enable wg-quick@wg0
+
+#For Spoke
+ip a add 169.254.0.2 peer 169.254.0.1 dev wg0
+ip -br a s dev wg0
+wg setconf wg0 wg0.conf
+ip link set wg0 up
+systemctl enable wg-quick@wg0
+
+#Step 6: these pings should now work
+Hub: ping 169.254.0.2
+Spoke: ping 169.254.0.1
+
+
+#Step 7: Set up point-to-point link between Hub and Mail
+
+// First config the Hub //
+cp wg0.conf wg1.conf
+
+#Hub
+[Interface]
+PrivateKey = uH/iK8w2xuWEs5c/SFUAy6EVMwMgtJ7ck4gLQDOaxm8=
+ListenPort = 60032
+
+#Mail
+[Peer]
+PublicKey = HBkzn/b71BoFP3hZCv1N+p7cNiLrlf7CR/OP18qiP1A=
+EndPoint = 134.209.81.14:60032
+AllowedIPs = 0.0.0.0/0
+
+
+// Config Mail //
+cd /etc/wireguard
+nano wg0.conf
+
+#Mail
+[Interface]
+PrivateKey = oPzi0+RbwB3P/c0zPjyqZCEZjMSfDgT2XLjyEGIwy24=
+ListenPort = 60032
+
+#Hub
+[Peer]
+PublicKey = xDXIsemhye9BDJ4IEy/8cF4o0bp+rMVF2bJNNxItYX4=
+EndPoint = 167.99.211.205:60032
+AllowedIPs = 0.0.0.0/0
+
+#Step 8: Add wg interface on both Hub and Mail
+
+#For Hub
+ip link add dev wg1 type wireguard
+ip a s dev wg1
+ip a add 169.254.0.1 peer 169.254.0.3 dev wg1
+ip -br a s dev wg1
+wg setconf wg1 wg1.conf
+ip link set wg1 up
+systemctl enable wg-quick@wg1
+
+#For Mail
+ip link add dev wg0 type wireguard
+ip a s dev wg0
+ip a add 169.254.0.3 peer 169.254.0.1 dev wg0
+ip -br a s dev wg0
+wg setconf wg0 wg0.conf
+ip link set wg0 up
+systemctl enable wg-quick@wg0
+
+
+#Step 9: thse pings should now work
+Hub: ping 169.254.0.3
+Mail: ping 169.254.0.1
+
+
+#Step 10: Add Static Routes to let private 10.x.x.x/24 ping Spoke1 to Spoke2
+
+For all nodes 
+
+oneliner enable IP forwarding in sysctl.conf
+sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf ; sysctl -p
+
+// Load system parameters
+// sysctl -p
+
+
+#Step 11: OSPF
+
+#For All nodes
+apt install bird2 -y
+cd /etc/bird
+mv bird.conf bird.conf.org
+
+#Hub
+nano bird.conf
+
+router id 169.254.0.1;
+
+protocol device {}
+
+protocol ospf wg4 {
+  area 0 {
+    interface "wg0" {};
+    interface "wg1" {};
+    interface "eth1" {};
+  };
+}
+
+chown bird:bird bird.conf
+
+#Check bird with commandline on Hub
+birdc (new prompt)
+bird> configure
+Reading configuration from /etc/bird/bird.conf
+Reconfiguration in progress
+
+bird> show ospf topology
+area 0.0.0.0
+
+	router 169.254.0.1
+		distance 0
+
+bird> show ospf neigh
+Router ID   	Pri	     State     	DTime	Interface  Router IP
+
+
+#Spoke
+nano bird.conf
+
+router id 169.254.0.2;
+
+protocol device {}
+
+protocol ospf wg4 {
+  area 0 {
+    interface "wg0" {};
+    interface "eth1" {};
+  };
+}
+
+chown bird:bird bird.conf
+ 
+#Mail
+nano bird.conf
+
+router id 169.254.0.3;
+
+protocol device {}
+
+protocol ospf wg4 {
+  area 0 {
+    interface "wg0" {};
+    interface "eth1" {};
+  };
+}
+
+chown bird:bird bird.conf
+
+#Check bird with commandline on both Spoke and Mail
+birdc
+bird> configure
+bird> show ospf topology
+area 0.0.0.0
+
+	router 169.254.0.1
+		distance 10
+		router 169.254.0.2 metric 10
+		router 169.254.0.3 metric 10
+
+	router 169.254.0.2
+		distance 20
+		router 169.254.0.1 metric 10
+
+	router 169.254.0.3
+		distance 0
+		router 169.254.0.1 metric 10
+
+bird> show ospf neigh
+wg4:
+Router ID   	Pri	     State     	DTime	Interface  Router IP
+169.254.0.1 	  1	Full/PtP  	39.524	wg0        169.254.0.1
+
+#Check bird topology and route on Hub 
+bird> show ospf topology 
+area 0.0.0.0
+
+	router 169.254.0.1
+		distance 0
+		router 169.254.0.2 metric 10
+		router 169.254.0.3 metric 10
+
+	router 169.254.0.2
+		distance 10
+		router 169.254.0.1 metric 10
+
+	router 169.254.0.3
+		distance 10
+		router 169.254.0.1 metric 10
+
+bird> show route
+Table master4:
+10.10.20.0/24        unicast [wg4 21:03:21.958] * I (150/20) [169.254.0.2]
+	via 169.254.0.2 on wg0
+10.10.30.0/24        unicast [wg4 21:02:54.957] * I (150/20) [169.254.0.3]
+	via 169.254.0.3 on wg1
+
+#Check network interface wg0
+tcpdump -v -ni wg0
+tcpdump: listening on wg0, link-type RAW (Raw IP), snapshot length 262144 bytes
+21:09:59.860682 IP (tos 0xc0, ttl 1, id 59835, offset 0, flags [none], proto OSPF (89), length 68)
+    169.254.0.1 > 224.0.0.5: OSPFv2, Hello, length 48
+	Router-ID 169.254.0.1, Backbone Area, Authentication Type: none (0)
+	Options [External]
+	  Hello Timer 10s, Dead Timer 40s, Mask 0.0.0.0, Priority 1
+	  Neighbor List:
+	    169.254.0.2
+21:10:00.979181 IP (tos 0xc0, ttl 1, id 12538, offset 0, flags [none], proto OSPF (89), length 68)
+    169.254.0.2 > 224.0.0.5: OSPFv2, Hello, length 48
+	Router-ID 169.254.0.2, Backbone Area, Authentication Type: none (0)
+	Options [External]
+	  Hello Timer 10s, Dead Timer 40s, Mask 0.0.0.0, Priority 1
+	  Neighbor List:
+	    169.254.0.1
+
+2 packets captured
+2 packets received by filter
+0 packets dropped by kernel
+
+
+#Step 12: Cleanup configuration and share OSPF routes to kernel
+
+#First add stub to the eth1 interface to stop forwarding and receiving hello messages to its own interface.
+
+#Spoke
+nano bird.conf
+
+router id 169.254.0.2;
+
+protocol device {}
+
+protocol ospf wg4 {
+  area 0 {
+    interface "wg0" {};
+    interface "eth1" {
+      stub;
+    };
+  };
+}
+ 
+#Mail
+nano bird.conf
+
+router id 169.254.0.3;
+
+protocol device {}
+
+protocol ospf wg4 {
+  area 0 {
+    interface "wg0" {};
+    interface "eth1" {
+      stub;
+    };
+  };
+}
+
+
+#Hub 
+ip route 
+root@hub:/etc/bird# ip r
+default via 188.166.0.1 dev eth0 proto static
+10.10.10.0/24 dev eth1 proto kernel scope link src 10.10.10.2
+10.18.0.0/16 dev eth0 proto kernel scope link src 10.18.0.6
+169.254.0.2 dev wg0 proto kernel scope link src 169.254.0.1
+169.254.0.3 dev wg1 proto kernel scope link src 169.254.0.1
+188.166.0.0/18 dev eth0 proto kernel scope link src 188.166.26.176
+
+#Hub geeft die 10.10.(20 en 30).x netwerken niet weer
+
+#Stap 13: Bird onderhoud zijn eigen routing table. 
+#Om de kernel table en de bird master table te synchroniseren doe je het volgende:
+
+#Hub
+nano bird.conf
+
+router id 169.254.0.1;
+
+protocol device {}
+
+protocol ospf wg4 {
+  area 0 {
+    interface "wg0" {};
+    interface "wg1" {};
+  };
+}
+
+protocol kernel {
+  ipv4 {
+    import none;
+    export all;
+  };
+}
+
+#Bij import none geen sync van kernel table naar bird master table
+#Bij export all sync je bird master table naar de kernel table
+
+bird> configure
+bird> show protocols
+Name       Proto      Table      State  Since         Info
+device1    Device     ---        up     20:48:58.027
+wg4        OSPF       master4    up     20:57:09.856  Running
+kernel1    Kernel     master4    up     21:55:04.341
+
+#Controleer nu de routing table van de kernel
+
+ip r
+default via 188.166.0.1 dev eth0 proto static
+10.10.10.0/24 dev eth1 proto kernel scope link src 10.10.10.2
+10.10.20.0/24 via 169.254.0.2 dev wg0 proto bird metric 32
+10.10.30.0/24 via 169.254.0.3 dev wg1 proto bird metric 32
+10.18.0.0/16 dev eth0 proto kernel scope link src 10.18.0.6
+169.254.0.2 dev wg0 proto kernel scope link src 169.254.0.1
+169.254.0.3 dev wg1 proto kernel scope link src 169.254.0.1
+188.166.0.0/18 dev eth0 proto kernel scope link src 188.166.26.176
+
+
+#Stap 14: Doe hetzelfde voor de Spoke en Mail  
+
+#Spoke
+nano bird.conf
+
+router id 169.254.0.2;
+
+protocol device {}
+
+protocol ospf wg4 {
+  ipv4 {
+    import where net !~ 10.10.10.0/24
+  }
+  area 0 {
+    interface "wg0" {};
+    interface "eth1" {
+      stub;
+    };
+  };
+}
+
+protocol kernel {
+  ipv4 {
+    import none;
+    export all;
+  };
+}
+ 
+#Mail
+nano bird.conf
+
+router id 169.254.0.3;
+
+protocol device {}
+
+protocol ospf wg4 {
+  area 0 {
+    interface "wg0" {};
+    interface "eth1" {
+      stub;
+    };
+  };
+}
+
+protocol kernel {
+  ipv4 {
+    import none;
+    export all;
+  };
+}
+
+#Vergeet niet om de configuratie te laden op alle nodes
+birdc (nieuwe prompt)
+bird> configure
+Reading configuration from /etc/bird/bird.conf
+Reconfigured
+
+systemctl start bird
+systemctl enable bird
+
